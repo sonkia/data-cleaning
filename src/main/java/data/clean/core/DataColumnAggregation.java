@@ -13,12 +13,13 @@ import java.util.List;
 
 /**
  * 数据聚合
- * 1.向上取指定步长
- * 2.按聚合类型聚合
+ * 1.指定聚合的列
+ * 2.指定聚合类型
+ * 3.指定的列必须能按指定的聚合类型聚合
  *
  */
 @Slf4j
-public class DataAggregation {
+public class DataColumnAggregation {
     /**
      * 匹配日期字符串格式
      */
@@ -37,23 +38,20 @@ public class DataAggregation {
     public boolean existTitle;
     //源文件编码
     public String charset;
-    //步长
-    public int step;
+    //聚合列的下标
+    public List<Integer> columnIndexes;
     //聚合类型
     AggrType aggrType;
-    //第一个有效列
-    public int firstCol;
 
-    public DataAggregation(String expandedName, String separatorChars, String sourcePath, String targetPath,
-                           boolean existTitle, int step, AggrType aggrType, int firstCol, String charset) {
+    public DataColumnAggregation(String expandedName, String separatorChars, String sourcePath, String targetPath,
+                                 boolean existTitle, List<Integer> columnIndexes, AggrType aggrType, String charset) {
         this.expandedName = expandedName;
         this.separatorChars = separatorChars;
         this.sourcePath = sourcePath;
         this.targetPath = targetPath;
         this.existTitle = existTitle;
-        this.step = step;
+        this.columnIndexes = columnIndexes;
         this.aggrType = aggrType;
-        this.firstCol = firstCol;
         this.charset = charset;
     }
 
@@ -61,12 +59,16 @@ public class DataAggregation {
 
         String expandedName = ".+\\.csv";
         String bashPath = "E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\位号数据\\";
-        String sourcePath = bashPath + "step-02-滞后处理（加55分钟）\\";
-        String targetPath = bashPath + "step-03-移动平均（55）（步长10分钟）\\";
-        DataAggregation dataAggregation = new DataAggregation(expandedName,
+        String sourcePath = bashPath + "step-06-分解炉及窑头数据拆分\\";
+        String targetPath = bashPath + "step-07-分解炉及窑头数据按列平均聚合\\";
+        List<Integer> columnIndexes = new ArrayList<>();
+        columnIndexes.add(2);
+        columnIndexes.add(3);
+        columnIndexes.add(4);
+        DataColumnAggregation dataAggregation = new DataColumnAggregation(expandedName,
                 ",",
                 sourcePath,targetPath,
-                true,10,AggrType.MEAN,1,"UTF-8");
+                true,columnIndexes,AggrType.MEAN,"UTF-8");
 
         long start = System.currentTimeMillis();
 
@@ -137,79 +139,38 @@ public class DataAggregation {
 
             String line = null;
             int counter = 0;
-            int count = 0;
             List<List<Double>> lists = new LinkedList();
             StringBuffer lineData = new StringBuffer();
             while ((line = bufferedReader.readLine()) != null) {
-
-                if (counter == 0) {
-                    counter++;
+                counter++;
+                String[] strings = StringUtils.splitPreserveAllTokens(line, separatorChars);
+                if (counter == 1) {
                     if (existTitle) {
-                        //设置标题
-                        if (firstCol == 1) {
-                            fileWriter.write(line + "\n");
-                        } else if (firstCol > 1) {
-                            int pos = line.indexOf(separatorChars);
-                            String title = line.substring(pos + 1,line.length());
-                            fileWriter.write(title + "\n");
-                        } else {
-                            throw new RuntimeException("firstRow < 1  :" + firstCol);
-                        }
+                        fileWriter.write(strings[0] + separatorChars + aggrType.toString() + "\n");
                         continue;
                     }
                 }
 
-                String[] strings = StringUtils.splitPreserveAllTokens(line,separatorChars);
                 if (strings.length <= 0) {
                     continue;
                 }
-                count++;
-                try{
-                    String dataStr = strings[firstCol - 1];
-                    lineData.append(dataStr);
-                    for (int i = firstCol; i < strings.length; i++) {
-                        String val = strings[i];
-                        List<Double> values;
-                        //首次初始化值
-                        if (count == 1) {
-                            values = new ArrayList<>();
-                            lists.add(values);
-                        } else {
-                            //不是首次，获取缓存值
-                            values = lists.get(i - firstCol);
-                        }
-
-                        //更新缓存值
-                        if (StringUtils.isNotBlank(val)) {
-                            double valDouble = Double.parseDouble(val);
-                            values.add(valDouble);
-                        } else {
-                            values.add(null);
-                        }
-
-                        if (count > step) {
-                            values.remove(0);
-                        }
-                        if (values.size() < step) {
-                            lineData.append(separatorChars);
-                        } else {
-                            String aggr = DataAggrFunction.aggr(values,aggrType);
-                            lineData.append(separatorChars + aggr);
-                        }
+                double sum = 0;
+                int nullCount = 0;
+                for (int i = 0; i < columnIndexes.size(); i++) {
+                    String val = strings[columnIndexes.get(i)];
+                    if (StringUtils.isBlank(val)) {
+                        nullCount++;
+                    } else {
+                        sum += Double.parseDouble(val);
                     }
-                    if (count % 100000 == 0) {
-                        System.out.println("处理条数：" + count);
-                        System.out.println(DateFormatUtils.format(new Date(),formatDate));
-                    }
-                    lineData.append("\n");
-                    fileWriter.write(lineData.toString());
-                    lineData.setLength(0);
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
-            }
-            System.out.println("total dataline count:" + count);
+                if (nullCount == columnIndexes.size()) {
+                    fileWriter.write(strings[0] + separatorChars + "\n");
+                } else {
+                    fileWriter.write(strings[0] + separatorChars + sum + "\n");
+                }
 
+            }
         } catch (IOException ioe) {
             ioe.printStackTrace();
         } catch (Exception e) {

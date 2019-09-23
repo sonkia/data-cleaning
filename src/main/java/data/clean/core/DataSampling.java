@@ -1,9 +1,10 @@
 package data.clean.core;
 
-import data.clean.common.enums.AggrType;
+import data.clean.common.enums.IntervalType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateUtils;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -12,13 +13,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * 数据聚合
- * 1.向上取指定步长
- * 2.按聚合类型聚合
+ * 数据采样
+ * 1.指定时间粒度
  *
  */
 @Slf4j
-public class DataAggregation {
+public class DataSampling {
     /**
      * 匹配日期字符串格式
      */
@@ -37,50 +37,25 @@ public class DataAggregation {
     public boolean existTitle;
     //源文件编码
     public String charset;
-    //步长
-    public int step;
-    //聚合类型
-    AggrType aggrType;
-    //第一个有效列
-    public int firstCol;
+    //间隔类型
+    IntervalType intervalType;
 
-    public DataAggregation(String expandedName, String separatorChars, String sourcePath, String targetPath,
-                           boolean existTitle, int step, AggrType aggrType, int firstCol, String charset) {
+    public DataSampling(String expandedName, String separatorChars, String sourcePath, String targetPath,
+                        boolean existTitle, IntervalType intervalType, String charset) {
         this.expandedName = expandedName;
         this.separatorChars = separatorChars;
         this.sourcePath = sourcePath;
         this.targetPath = targetPath;
         this.existTitle = existTitle;
-        this.step = step;
-        this.aggrType = aggrType;
-        this.firstCol = firstCol;
+        this.intervalType = intervalType;
         this.charset = charset;
     }
 
-    public static void main(String[] args) {
-
-        String expandedName = ".+\\.csv";
-        String bashPath = "E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\位号数据\\";
-        String sourcePath = bashPath + "step-02-滞后处理（加55分钟）\\";
-        String targetPath = bashPath + "step-03-移动平均（55）（步长10分钟）\\";
-        DataAggregation dataAggregation = new DataAggregation(expandedName,
-                ",",
-                sourcePath,targetPath,
-                true,10,AggrType.MEAN,1,"UTF-8");
-
-        long start = System.currentTimeMillis();
-
-        dataAggregation.dataAggregation();
-
-        long diff  = System.currentTimeMillis() - start;
-        System.out.println("数据聚合执行耗时：" + diff + "ms");
-        System.out.println("数据聚合执行耗时：" + diff / 60000 + " m" + diff % 60000 / 1000 + " s");
-    }
 
     /**
-     * 数据聚合
+     * 数据采样
      */
-    public void dataAggregation() {
+    public void dataSampling() {
         File file = new File(sourcePath);
         if (file.exists()) {
             File[] files = file.listFiles();
@@ -93,7 +68,7 @@ public class DataAggregation {
                         continue;
                     } else {
                         if (file2.getAbsolutePath().matches(expandedName)) {
-                            dataAggregation(file2);
+                            dataSampling(file2);
                             System.out.println("文件:" + file2.getAbsolutePath() + " dataAggregation处理完成");
                         }
                     }
@@ -105,11 +80,11 @@ public class DataAggregation {
     }
 
     /**
-     * 数据聚合
+     * 数据采样
      * @param file 文件
      * @return
      */
-    public void dataAggregation(File file) {
+    public void dataSampling(File file) {
         //文件流
         FileInputStream fileInputStream = null;
         //读文件对象
@@ -138,25 +113,11 @@ public class DataAggregation {
             String line = null;
             int counter = 0;
             int count = 0;
-            List<List<Double>> lists = new LinkedList();
-            StringBuffer lineData = new StringBuffer();
             while ((line = bufferedReader.readLine()) != null) {
-
-                if (counter == 0) {
-                    counter++;
-                    if (existTitle) {
-                        //设置标题
-                        if (firstCol == 1) {
-                            fileWriter.write(line + "\n");
-                        } else if (firstCol > 1) {
-                            int pos = line.indexOf(separatorChars);
-                            String title = line.substring(pos + 1,line.length());
-                            fileWriter.write(title + "\n");
-                        } else {
-                            throw new RuntimeException("firstRow < 1  :" + firstCol);
-                        }
-                        continue;
-                    }
+                counter++;
+                if (counter == 1) {
+                    fileWriter.write(line + "\n");
+                    continue;
                 }
 
                 String[] strings = StringUtils.splitPreserveAllTokens(line,separatorChars);
@@ -165,45 +126,19 @@ public class DataAggregation {
                 }
                 count++;
                 try{
-                    String dataStr = strings[firstCol - 1];
-                    lineData.append(dataStr);
-                    for (int i = firstCol; i < strings.length; i++) {
-                        String val = strings[i];
-                        List<Double> values;
-                        //首次初始化值
-                        if (count == 1) {
-                            values = new ArrayList<>();
-                            lists.add(values);
-                        } else {
-                            //不是首次，获取缓存值
-                            values = lists.get(i - firstCol);
+                    //todo notice：特殊处理 因为日期字符串多了一个空格和前后引号
+                    String dateStr = strings[0].substring(1,strings[0].length() - 2);
+                    if (DateUtils.parseDate(dateStr,dateTimePatterns).getTime() % 3600000 == 0) {
+                        StringBuffer stringBuffer = new StringBuffer(dateStr);
+                        for (int i = 1; i < strings.length; i++) {
+                            stringBuffer.append(separatorChars).append(strings[i]);
                         }
-
-                        //更新缓存值
-                        if (StringUtils.isNotBlank(val)) {
-                            double valDouble = Double.parseDouble(val);
-                            values.add(valDouble);
-                        } else {
-                            values.add(null);
-                        }
-
-                        if (count > step) {
-                            values.remove(0);
-                        }
-                        if (values.size() < step) {
-                            lineData.append(separatorChars);
-                        } else {
-                            String aggr = DataAggrFunction.aggr(values,aggrType);
-                            lineData.append(separatorChars + aggr);
-                        }
+                        fileWriter.write(stringBuffer.toString() + "\n");
                     }
                     if (count % 100000 == 0) {
                         System.out.println("处理条数：" + count);
                         System.out.println(DateFormatUtils.format(new Date(),formatDate));
                     }
-                    lineData.append("\n");
-                    fileWriter.write(lineData.toString());
-                    lineData.setLength(0);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

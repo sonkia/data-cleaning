@@ -6,15 +6,19 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public class BitName {
 
     public static void main(String[] args) {
         replaceBitName(getBitNameMap());
     }
 
+    /**
+     * 位号名称替换
+     */
     public static void replaceBitName(Map<String,String> bitNameMap) {
-        File source = new File("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\source\\join-位号滞后55\\source.csv");
-        File target = new File("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\source\\join-位号滞后55\\replaceBitName.csv");
+        File source = new File("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\source\\join\\source.csv");
+        File target = new File("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\source\\join\\replaceBitName.csv");
 
         FileInputStream fileInputStream = null;
         BufferedReader bufferedReader = null;
@@ -36,6 +40,7 @@ public class BitName {
                     StringBuffer replaceHeader = new StringBuffer(strings[0]);
                     for (int i = 1; i < strings.length; i++) {
                         String name = strings[i].toUpperCase();
+
                         String value = bitNameMap.get(name);
                         if (null == value) {
                             replaceHeader.append(",").append(name);
@@ -68,8 +73,12 @@ public class BitName {
         }
     }
 
+    /**
+     * 位号名map
+     * @return
+     */
     public static Map getBitNameMap() {
-        File bitName = new File("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\位号导出.csv");
+        File bitName = new File("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\位号对应表.csv");
         FileInputStream fileInputStream = null;
         BufferedReader bufferedReader = null;
         //FileWriter fileWriter = null;
@@ -81,7 +90,7 @@ public class BitName {
             String line = null;
             while ((line = bufferedReader.readLine())!= null){
                 String[] strings = StringUtils.splitPreserveAllTokens(line,",");
-                bigNameMap.put(strings[0].toUpperCase(),strings[3]);
+                bigNameMap.put(strings[1].toUpperCase(),strings[0]);
             }
             return bigNameMap;
         } catch (Exception e) {

@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class FileMerge {
+public class FileMergeDemo {
     public static void main(String[] args) {
         //文件流
         FileInputStream fileInputStream = null;
@@ -18,9 +18,9 @@ public class FileMerge {
         //写文件对象
         FileWriter fileWriter = null;
         try {
-            fileInputStream = new FileInputStream("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\source\\特征数据-位号滞后55\\QIAN130_1.csv");
+            fileInputStream = new FileInputStream("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\位号数据\\QIAN130_1.csv");
 
-            File dealFile = new File("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\source\\特征数据-位号滞后55\\QIAN130.csv");
+            File dealFile = new File("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\位号数据\\QIAN130.csv");
 
             fileWriter = new FileWriter(dealFile,true);
             bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));
@@ -51,7 +51,7 @@ public class FileMerge {
         }
 
         try {
-            fileInputStream = new FileInputStream("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\source\\特征数据-位号滞后55\\QIAN130_2.csv");
+            fileInputStream = new FileInputStream("E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\位号数据\\QIAN130_2.csv");
 
             bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));
 
@@ -59,7 +59,7 @@ public class FileMerge {
             int count  = 0;
             while ((str = bufferedReader.readLine()) != null) {
                 count++;
-                if (count == 1) {
+                if (count <= 2) {
                     continue;
                 }
                 fileWriter.write(str + "\n");

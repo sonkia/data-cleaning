@@ -134,9 +134,9 @@ public class DataLagProcessing {
                 }
 
                 String[] strings = StringUtils.splitPreserveAllTokens(line,separatorChars);
-                //todo notice：特殊处理
-                String dateStr = strings[0].substring(1,strings[0].length() - 2);
-
+                //todo notice：特殊处理 因为日期字符串多了一个空格和前后引号
+                //String dateStr = strings[0].substring(1,strings[0].length() - 2);
+                String dateStr = strings[0];
                 Date date = DateUtils.parseDate(dateStr,dateTimePatterns);
                 String lagDateStr = lagDate(date,lagCycle);
                 lineData.append(lagDateStr + separatorChars);

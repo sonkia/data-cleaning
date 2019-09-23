@@ -12,13 +12,14 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * 数据聚合
+ * 数据聚合加强版
  * 1.向上取指定步长
- * 2.按聚合类型聚合
+ * 2.指定聚合类型
+ * 3.指定步长内数据的前size个
  *
  */
 @Slf4j
-public class DataAggregation {
+public class DataAggregationEnhance {
     /**
      * 匹配日期字符串格式
      */
@@ -39,19 +40,22 @@ public class DataAggregation {
     public String charset;
     //步长
     public int step;
+    //聚合个数
+    public int size;
     //聚合类型
-    AggrType aggrType;
+    public AggrType aggrType;
     //第一个有效列
     public int firstCol;
 
-    public DataAggregation(String expandedName, String separatorChars, String sourcePath, String targetPath,
-                           boolean existTitle, int step, AggrType aggrType, int firstCol, String charset) {
+    public DataAggregationEnhance(String expandedName, String separatorChars, String sourcePath, String targetPath,
+                                  boolean existTitle, int step, int size, AggrType aggrType, int firstCol, String charset) {
         this.expandedName = expandedName;
         this.separatorChars = separatorChars;
         this.sourcePath = sourcePath;
         this.targetPath = targetPath;
         this.existTitle = existTitle;
         this.step = step;
+        this.size = size;
         this.aggrType = aggrType;
         this.firstCol = firstCol;
         this.charset = charset;
@@ -63,10 +67,10 @@ public class DataAggregation {
         String bashPath = "E:\\work\\天数\\数据清洗\\红狮数据\\漳平三期4月1日起新数据-张居宾\\位号数据\\";
         String sourcePath = bashPath + "step-02-滞后处理（加55分钟）\\";
         String targetPath = bashPath + "step-03-移动平均（55）（步长10分钟）\\";
-        DataAggregation dataAggregation = new DataAggregation(expandedName,
+        DataAggregationEnhance dataAggregation = new DataAggregationEnhance(expandedName,
                 ",",
                 sourcePath,targetPath,
-                true,10,AggrType.MEAN,1,"UTF-8");
+                true,10,-1,AggrType.MEAN,1,"UTF-8");
 
         long start = System.currentTimeMillis();
 
@@ -190,12 +194,17 @@ public class DataAggregation {
                         if (count > step) {
                             values.remove(0);
                         }
-                        if (values.size() < step) {
-                            lineData.append(separatorChars);
-                        } else {
-                            String aggr = DataAggrFunction.aggr(values,aggrType);
-                            lineData.append(separatorChars + aggr);
+
+                        String aggr = "";
+                        if (values.size() >= step) {
+                            if (size > 0) {
+                                List<Double> valueSize = values.subList(0,size);
+                                aggr = DataAggrFunction.aggr(valueSize,aggrType);
+                            } else {
+                                aggr = DataAggrFunction.aggr(values,aggrType);
+                            }
                         }
+                        lineData.append(separatorChars + aggr);
                     }
                     if (count % 100000 == 0) {
                         System.out.println("处理条数：" + count);
