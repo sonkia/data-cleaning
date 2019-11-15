@@ -127,7 +127,8 @@ public class DataSampling {
                 count++;
                 try{
                     //todo notice：特殊处理 因为日期字符串多了一个空格和前后引号
-                    String dateStr = strings[0].substring(1,strings[0].length() - 2);
+                    //String dateStr = strings[0].substring(1,strings[0].length() - 2);
+                    String dateStr = strings[0];
                     if (DateUtils.parseDate(dateStr,dateTimePatterns).getTime() % 3600000 == 0) {
                         StringBuffer stringBuffer = new StringBuffer(dateStr);
                         for (int i = 1; i < strings.length; i++) {

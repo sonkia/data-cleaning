@@ -1,4 +1,4 @@
-package data.clean.business.ZhangPingPhase3;
+package data.clean.business.ZhangPingPhase3.data_201904_201909;
 
 import data.clean.common.enums.AggrType;
 import data.clean.common.enums.IntervalType;
@@ -341,7 +341,7 @@ public class DataCleaning20190906 {
 
     /**
      * 回转窑数据聚合
-     * 取前60分钟的60条数据，对这70条数据取前30条数据做平均值聚合
+     * 取前60分钟的60条数据，对这60条数据取前30条数据做平均值聚合
      */
     public static void step11() {
         String expandedName = ".+\\.csv";

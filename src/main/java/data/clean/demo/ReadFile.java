@@ -5,8 +5,27 @@ import java.util.HashSet;
 
 public class ReadFile {
     public static void main(String[] args) {
-        File file = new File("C:\\Users\\dell\\AppData\\Roaming\\ZhiXin\\李佳鹤\\风煤料预测数据集.csv");
-        readFile(file);
+        File file = new File("E:\\work\\天数\\数据清洗\\红狮数据\\漳平红狮三期201909-201911数据\\清洗\\step-00-所有位号数据合并");
+        if (file.exists()) {
+            File[] files = file.listFiles();
+            if (null == files || files.length == 0) {
+                System.out.println("文件夹是空的!");
+                return;
+            } else {
+                int mergeTimes = 0;
+                for (File file2 : files) {
+                    mergeTimes++;
+                    if (file2.isDirectory()) {
+                        continue;
+                    } else {
+                        readFile(file2);
+                        System.out.println("文件:" + file2.getAbsolutePath() + " 处理完成");
+                    }
+                }
+            }
+        } else {
+            System.out.println("文件不存在!");
+        }
     }
 
     public static void readFile(File file){
@@ -19,20 +38,16 @@ public class ReadFile {
             fileInputStream = new FileInputStream(file);
             bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));
             String str = null;
+            int counter = 0;
             while ((str = bufferedReader.readLine()) != null) {
-                String[] strings = str.split(",");
-                System.out.println(strings.length);
-                HashSet set = new HashSet();
-
-                for (int i = 0; i < strings.length; i++) {
-                    set.add(strings[i]);
-                    if ((i + 1) != set.size()) {
-                        System.out.println(i);
-                        break;
-                    }
+                counter ++;
+                if (counter <= 10 ) {
+                    System.out.println(str);
+                } else {
+                    return;
                 }
-                break;
             }
+            System.out.println("total:" + counter);
 
         } catch (IOException ioe) {
             ioe.printStackTrace();

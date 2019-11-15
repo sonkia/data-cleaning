@@ -178,6 +178,8 @@ public class DataAggregationSecond2Minute {
                         if (count == 1) {
                             values = new ArrayList<>();
                             lists.add(values);
+                            double valDouble = Double.parseDouble(val);
+                            values.add(valDouble);
                         } else {
                             //不是首次，获取缓存值
                             values = lists.get(i - firstCol);
